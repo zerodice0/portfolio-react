@@ -1,6 +1,9 @@
 import React, {useState} from 'react'
+import {Route, Link} from 'react-router-dom'
+import Profile from './components/Profile'
+import AutoMap from './components/demo/AutoMap'
 import styled, {css} from 'styled-components'
-import {Button} from 'antd'
+
 import 'antd/dist/antd.css'
 import MenuOpenIcon from '@material-ui/icons/MenuOpen'
 
@@ -93,7 +96,7 @@ const App = () => {
   return <Context>
     <TabRow>
       <LeftTabSpace isOpen={menu}>
-        BlackBear's Portfolio
+        Navigation
       </LeftTabSpace>
       <RightTabSpace isOpen={menu}>
         <Icon>
@@ -103,10 +106,14 @@ const App = () => {
     </TabRow>
     <ContextRow>
       <LeftNavigation isOpen={menu}>
-        LeftNavigation
+        <div>
+          <Link to="/">Profile</Link>
+          <Link to="/automap">Demo</Link>
+        </div>
       </LeftNavigation>
       <RightContent isOpen={menu}>
-        RightContent
+        <Route path="/" exact={true} component={Profile}/>
+        <Route path="/automap" component={AutoMap}/>
       </RightContent>
     </ContextRow>
   </Context>
