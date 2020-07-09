@@ -1,7 +1,7 @@
 import React, {useState} from 'react'
 import {Route, Link} from 'react-router-dom'
 import Profile from './components/Profile'
-import AutoMap from './components/demo/AutoMap'
+import AutoMap from './components/demo/automap/AutoMap'
 import styled, {css} from 'styled-components'
 
 import 'antd/dist/antd.css'
