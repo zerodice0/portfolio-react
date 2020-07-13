@@ -32,7 +32,7 @@ export const drawFillArc = (context, centerPoint, label) => {
 
   context.font="8px serif"
   context.fillStyle="#000000"
-  context.strokeText(label, x-2.5, y+2.5)
+  label && context.strokeText(label, x-2.5, y+2.5)
 }
 
 export const drawLineToPoint = (context, currentPoint) => {

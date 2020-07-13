@@ -17,7 +17,6 @@ const MiniMap = styled.canvas`
   border: 1px solid black;
 `
 
-
 const AutoMap = () => {
   class Point {
     constructor(x=0, y=0) {
@@ -43,35 +42,61 @@ const AutoMap = () => {
     new Point(50, 140),
     new Point(100, 40),
     new Point(150, 120)
-
   ])
+
+  const drawPaths = (context) => {
+    for(let i=0; i<edgePointList.length-1; i++) {
+      const [startPoint, endPoint] = edgePointList.slice(i, i+2)
+      const [middlePoint] = middlePointList.slice(i, i+1)
+      const controlPoint = calcControlPoint(startPoint, middlePoint, endPoint, 0.5)
+
+      context.beginPath()
+      context.moveTo(startPoint.x, startPoint.y)
+      context.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
+      context.stroke()
+    }
+  }
+
+  const drawPoints = (context) => {
+    context.beginPath()
+    context.moveTo(edgePointList[0].x, edgePointList[0].y)
+    
+    edgePointList.forEach((point, index) => {
+      drawFillArc(context, point, index+1)
+    })
+    middlePointList.forEach(point => {
+      drawFillRect(context, point)
+    })
+    
+    context.closePath()
+    context.stroke()
+  }
+
+  const getMousePosition = (event, canvas) => {
+    const rect = canvas.getBoundingClientRect()
+    return new Point(
+      (event.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
+      (event.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height)
+  }
 
   useEffect(() => {
     const canvas = refMiniMap.current
     const context = canvas.getContext("2d")
 
-    const [startPointA, endPointA] = edgePointList.slice(0, 2)
-    const [middlePointA] = middlePointList.slice(0, 1)
-    const controlPointA = calcControlPoint(startPointA, middlePointA, endPointA, 0.5)
-    context.beginPath()
-    context.moveTo(startPointA.x, startPointA.y)
-    context.quadraticCurveTo(controlPointA.x, controlPointA.y, endPointA.x, endPointA.y)
-    context.stroke()
+    drawPaths(context)
+    drawPoints(context)
 
-    const [startPointB, endPointB] = edgePointList.slice(1, 3)
-    const [middlePointB] = middlePointList.slice(1, 2)
-    const controlPointB = calcControlPoint(startPointB, middlePointB, endPointB, 0.5)
-    context.beginPath()
-    context.moveTo(startPointB.x, startPointB.y)
-    context.quadraticCurveTo(controlPointB.x, controlPointB.y, endPointB.x, endPointB.y)
-    context.stroke()
-    
-    context.beginPath()
-    context.moveTo(edgePointList[0].x, edgePointList[0].y)
-    edgePointList.forEach((point, index) => {drawFillArc(context, point, index+1)})
-    middlePointList.forEach(point => {drawFillRect(context, point)})
-    context.closePath()
-    context.stroke()
+    canvas.addEventListener("mousedown", (event) => {
+      const {x, y} = getMousePosition(event, canvas)
+
+      console.log(`${x}, ${y}`)
+    })
+    canvas.addEventListener("mouseup", () => (alert("mouseup")))
+    canvas.addEventListener("mousemove", () => (console && console.log("mousemove")))
+    canvas.addEventListener("dblclick", (event) => {
+      event.preventDefault()
+      alert("dblclick")
+    })
   })
 
   return <Context>
