@@ -1,5 +1,6 @@
 import React, {useRef, useEffect, useState} from 'react'
-import {drawFillArc, drawFillRect} from './Drawer'
+import {updateCanvas, radius} from './Drawer'
+import Point from './Point'
 import styled from 'styled-components'
 
 const Context = styled.div`
@@ -18,21 +19,6 @@ const MiniMap = styled.canvas`
 `
 
 const AutoMap = () => {
-  class Point {
-    constructor(x=0, y=0) {
-      this.x = x
-      this.y = y
-    }
-  }
-  
-  /*This function calcCtrlPoint() will return the result of calculating bezier point.*/
-  function calcControlPoint(pointA, pointB, pointC, rate){
-    var controlPointX = (pointB.x-Math.pow(rate, 2)*pointC.x-Math.pow((1-rate), 2)*pointA.x)/(2*rate*(1-rate));
-    var controlPointY = (pointB.y-Math.pow(rate, 2)*pointC.y-Math.pow((1-rate), 2)*pointA.y)/(2*rate*(1-rate));
-  
-    return new Point(controlPointX, controlPointY);
-  }
-  
   const refMiniMap = useRef(null)
   const [middlePointList, setMiddlePointList] = useState([
     new Point(10, 10),
@@ -43,34 +29,7 @@ const AutoMap = () => {
     new Point(100, 40),
     new Point(150, 120)
   ])
-
-  const drawPaths = (context) => {
-    for(let i=0; i<edgePointList.length-1; i++) {
-      const [startPoint, endPoint] = edgePointList.slice(i, i+2)
-      const [middlePoint] = middlePointList.slice(i, i+1)
-      const controlPoint = calcControlPoint(startPoint, middlePoint, endPoint, 0.5)
-
-      context.beginPath()
-      context.moveTo(startPoint.x, startPoint.y)
-      context.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
-      context.stroke()
-    }
-  }
-
-  const drawPoints = (context) => {
-    context.beginPath()
-    context.moveTo(edgePointList[0].x, edgePointList[0].y)
-    
-    edgePointList.forEach((point, index) => {
-      drawFillArc(context, point, index+1)
-    })
-    middlePointList.forEach(point => {
-      drawFillRect(context, point)
-    })
-    
-    context.closePath()
-    context.stroke()
-  }
+  const [clickedPointIndex, setClickedPointIndex] = useState(-1)
 
   const getMousePosition = (event, canvas) => {
     const rect = canvas.getBoundingClientRect()
@@ -79,28 +38,56 @@ const AutoMap = () => {
       (event.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height)
   }
 
-  useEffect(() => {
+  const mouseDown = (event) => {
     const canvas = refMiniMap.current
-    const context = canvas.getContext("2d")
+    const {x, y} = getMousePosition(event, canvas)
+    const clickedPointIndex = edgePointList.findIndex((pointer) => (
+      (pointer.x-(radius/2)) <= x) && (x <= pointer.x+(radius/2))
+      && (pointer.y-(radius/2) <= y) && (y <= pointer.y+(radius/2))
+    )
 
-    drawPaths(context)
-    drawPoints(context)
+    if (clickedPointIndex >= 0) {
+      setClickedPointIndex(clickedPointIndex)
+    }
+  }
 
-    canvas.addEventListener("mousedown", (event) => {
+  const mouseUp = () => {
+    setClickedPointIndex(-1)
+  }
+
+  const mouseMove = (event) => {
+    if(clickedPointIndex >= 0) {
+      const canvas = refMiniMap.current
+
+      const clickedPoint = edgePointList[clickedPointIndex]
       const {x, y} = getMousePosition(event, canvas)
+      
+      if(Math.abs(clickedPoint.x-x) >= 1 
+        || Math.abs(clickedPoint.y-y) >= 1) {
+          const updatedEdgePointList = edgePointList.map(
+            (point, index) => index === clickedPointIndex ? new Point(x, y) : point)
+  
+          setEdgePointList(updatedEdgePointList)
+          updateCanvas(canvas, edgePointList, middlePointList)
+        }
+    }
+  }
 
-      console.log(`${x}, ${y}`)
-    })
-    canvas.addEventListener("mouseup", () => (alert("mouseup")))
-    canvas.addEventListener("mousemove", () => (console && console.log("mousemove")))
-    canvas.addEventListener("dblclick", (event) => {
-      event.preventDefault()
-      alert("dblclick")
-    })
-  })
+  const doubleClick = (event) => {
+    event.preventDefault()
+    console && console.log("dblclick")
+  }
+
+  useEffect(() => {
+    updateCanvas(refMiniMap.current, edgePointList, middlePointList)
+  }, [])
 
   return <Context>
-    <MiniMap ref={refMiniMap}/>
+    <MiniMap ref={refMiniMap}
+      onMouseDown={mouseDown}
+      onMouseMove={mouseMove}
+      onDoubleClick={doubleClick}
+      onMouseUp={mouseUp}/>
   </Context>
 }
 
