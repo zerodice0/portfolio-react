@@ -29,7 +29,8 @@ const AutoMap = () => {
     new Point(100, 40),
     new Point(150, 120)
   ])
-  const [clickedPointIndex, setClickedPointIndex] = useState(-1)
+  const [clickedEdgePointIndex, setClickedEdgePointIndex] = useState(-1)
+  const [clickedMiddlePointIndex, setClickedMiddlePointIndex] = useState(-1)
 
   const getMousePosition = (event, canvas) => {
     const rect = canvas.getBoundingClientRect()
@@ -41,35 +42,64 @@ const AutoMap = () => {
   const mouseDown = (event) => {
     const canvas = refMiniMap.current
     const {x, y} = getMousePosition(event, canvas)
-    const clickedPointIndex = edgePointList.findIndex((pointer) => (
+    const clickedEdgePointIndex = edgePointList.findIndex((pointer) => (
+      (pointer.x-(radius/2)) <= x) && (x <= pointer.x+(radius/2))
+      && (pointer.y-(radius/2) <= y) && (y <= pointer.y+(radius/2))
+    )
+    const clickedMiddlePointIndex = middlePointList.findIndex((pointer) => (
       (pointer.x-(radius/2)) <= x) && (x <= pointer.x+(radius/2))
       && (pointer.y-(radius/2) <= y) && (y <= pointer.y+(radius/2))
     )
 
-    if (clickedPointIndex >= 0) {
-      setClickedPointIndex(clickedPointIndex)
+    if (clickedEdgePointIndex >= 0) {
+      setClickedEdgePointIndex(clickedEdgePointIndex)
+    }
+
+    if (clickedMiddlePointIndex >= 0) {
+      setClickedMiddlePointIndex(clickedMiddlePointIndex)
     }
   }
 
   const mouseUp = () => {
-    setClickedPointIndex(-1)
+    const canvas = refMiniMap.current
+    
+    setClickedEdgePointIndex(-1)
+    setClickedMiddlePointIndex(-1)
+    updateCanvas(canvas, edgePointList, middlePointList)
   }
 
   const mouseMove = (event) => {
-    if(clickedPointIndex >= 0) {
-      const canvas = refMiniMap.current
+    const canvas = refMiniMap.current
 
-      const clickedPoint = edgePointList[clickedPointIndex]
+    if(clickedEdgePointIndex >= 0) {
+
+      const clickedEdgePoint = edgePointList[clickedEdgePointIndex]
       const {x, y} = getMousePosition(event, canvas)
       
-      if(Math.abs(clickedPoint.x-x) >= 1 
-        || Math.abs(clickedPoint.y-y) >= 1) {
+      if(Math.abs(clickedEdgePoint.x-x) >= 1 
+        || Math.abs(clickedEdgePoint.y-y) >= 1) {
           const updatedEdgePointList = edgePointList.map(
-            (point, index) => index === clickedPointIndex ? new Point(x, y) : point)
+            (point, index) => index === clickedEdgePointIndex ? new Point(x, y) : point)
   
           setEdgePointList(updatedEdgePointList)
           updateCanvas(canvas, edgePointList, middlePointList)
         }
+
+    }
+
+    if(clickedMiddlePointIndex >= 0) {
+      const clickedMiddlePoint = middlePointList[clickedMiddlePointIndex]
+      const {x, y} = getMousePosition(event, canvas)
+
+      if(Math.abs(clickedMiddlePoint.x-x) >= 1 
+        || Math.abs(clickedMiddlePoint.y-y) >= 1) {
+          const updateMiddlePoint = middlePointList.map(
+            (point, index) => index === clickedMiddlePointIndex ? new Point(x, y) : point)
+  
+          setMiddlePointList(updateMiddlePoint)
+          updateCanvas(canvas, edgePointList, middlePointList)
+        }
+
     }
   }
 
