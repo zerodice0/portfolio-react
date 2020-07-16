@@ -1,6 +1,7 @@
 import Point from './Point'
 
-export const radius = 5
+export const radius = 6
+export const fontSize = 8
 
 // This function calcCtrlPoint() will return the result of calculating bezier point.
 const calcControlPoint = (pointA, pointB, pointC, rate) => {
@@ -39,9 +40,13 @@ const drawFillArc = (context, centerPoint, label) => {
   context.fill()
   context.moveTo(x, y)
 
-  context.font="8px serif"
-  context.fillStyle="#000000"
-  label && context.strokeText(label, x-radius/2, y+radius/2)
+  if(label) {
+    context.font=`${fontSize}px aria`
+    context.fillStyle="#000000"
+    const measureLabel = context.measureText(label)
+    context.strokeText(label,
+      x-(measureLabel.width/2), y+fontSize/2)
+  }
 }
 
 export const drawLineToPoint = (context, currentPoint) => {

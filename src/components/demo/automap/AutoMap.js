@@ -23,11 +23,11 @@ const AutoMap = () => {
   const UPDATE_PATH_MODE_MIDDLE_POINT = 1
 
   const refMiniMap = useRef(null)
-  const [middlePointList, setMiddlePointList] = useState([
+  const [middlePoints, setMiddlePoints] = useState([
     new Point(10, 10),
     new Point(125, 30)
   ])
-  const [edgePointList, setEdgePointList] = useState([
+  const [edgePoints, setEdgePoints] = useState([
     new Point(50, 140),
     new Point(100, 40),
     new Point(150, 120)
@@ -39,23 +39,23 @@ const AutoMap = () => {
     const clickedPointIndex = mode === UPDATE_PATH_MODE_EDGE_POINT
       ? clickedEdgePointIndex : clickedMiddlePointIndex
     const path = mode === UPDATE_PATH_MODE_EDGE_POINT
-      ? edgePointList : middlePointList
+      ? edgePoints : middlePoints
+
     if(clickedPointIndex >= 0) {
       const clickedPoint = path[clickedPointIndex]
       const {x, y} = getMousePosition(event, canvas)
       const setPath = mode === UPDATE_PATH_MODE_EDGE_POINT
-        ? setEdgePointList : setMiddlePointList
+        ? setEdgePoints : setMiddlePoints
       
       if(Math.abs(clickedPoint.x-x) >= 1 
       || Math.abs(clickedPoint.y-y) >= 1) {
-          const updatedPointList = path.map(
+          const updatedPoints = path.map(
             (point, index) => index === clickedPointIndex ? new Point(x, y) : point
           )
   
-          setPath(updatedPointList)
-          updateCanvas(canvas, edgePointList, middlePointList)
+          setPath(updatedPoints)
+          updateCanvas(canvas, edgePoints, middlePoints)
       }
-
     }
   }
 
@@ -69,14 +69,13 @@ const AutoMap = () => {
   const mouseDown = (event) => {
     const canvas = refMiniMap.current
     const {x, y} = getMousePosition(event, canvas)
-    const clickedEdgePointIndex = edgePointList.findIndex((pointer) => (
-      (pointer.x-(radius/2)) <= x) && (x <= pointer.x+(radius/2))
-      && (pointer.y-(radius/2) <= y) && (y <= pointer.y+(radius/2))
+    const isMouseOnPointer = (point) => (
+      ((point.x-(radius/2)) <= x) && (x <= point.x+(radius/2))
+      && (point.y-(radius/2) <= y) && (y <= point.y+(radius/2))
     )
-    const clickedMiddlePointIndex = middlePointList.findIndex((pointer) => (
-      (pointer.x-(radius/2)) <= x) && (x <= pointer.x+(radius/2))
-      && (pointer.y-(radius/2) <= y) && (y <= pointer.y+(radius/2))
-    )
+
+    const clickedEdgePointIndex = edgePoints.findIndex(isMouseOnPointer)
+    const clickedMiddlePointIndex = middlePoints.findIndex(isMouseOnPointer)
 
     if (clickedEdgePointIndex >= 0) {
       setClickedEdgePointIndex(clickedEdgePointIndex)
@@ -92,7 +91,7 @@ const AutoMap = () => {
 
     setClickedEdgePointIndex(-1)
     setClickedMiddlePointIndex(-1)
-    updateCanvas(canvas, edgePointList, middlePointList)
+    updateCanvas(canvas, edgePoints, middlePoints)
   }
 
   const mouseMove = (event) => {
@@ -104,20 +103,31 @@ const AutoMap = () => {
     updatePath(event, canvas, mode)
   }
 
-  const doubleClick = (event) => {
+  const mouseDoubleClick = (event) => {
     event.preventDefault()
-    console && console.log("dblclick")
+    const canvas = refMiniMap.current
+    const newEdgePoint = getMousePosition(event, canvas)
+    const lastPoint = edgePoints[edgePoints.length-1]
+    const newMiddlePoint = new Point((lastPoint.x+newEdgePoint.x)/2, (lastPoint.y+newEdgePoint.y)/2)
+
+    const updateEdgePoints = [...edgePoints, newEdgePoint]
+    const updateMiddlePoints = [...middlePoints, newMiddlePoint]
+      
+    setEdgePoints(updateEdgePoints)
+    setMiddlePoints(updateMiddlePoints)
+
+    updateCanvas(canvas, updateEdgePoints, updateMiddlePoints)
   }
 
   useEffect(() => {
-    updateCanvas(refMiniMap.current, edgePointList, middlePointList)
-  }, [])
+    updateCanvas(refMiniMap.current, edgePoints, middlePoints)
+  })
 
   return <Context>
     <MiniMap ref={refMiniMap}
       onMouseDown={mouseDown}
       onMouseMove={mouseMove}
-      onDoubleClick={doubleClick}
+      onDoubleClick={mouseDoubleClick}
       onMouseUp={mouseUp}/>
   </Context>
 }
